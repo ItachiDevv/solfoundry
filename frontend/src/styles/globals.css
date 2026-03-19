@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-surface: #111111;
+    --color-border: #1a1a1a;
+    --color-purple: #9945ff;
+    --color-green: #14f195;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(153, 69, 255, 0.3);
+    color: #e5e5e5;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-foundry-purple hover:bg-foundry-purple-light text-white font-medium
+      px-4 py-2 rounded-lg transition-all duration-200 ease-out
+      active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-foundry-surface border border-foundry-border-light text-foundry-text
+      hover:border-foundry-purple hover:text-foundry-purple font-medium
+      px-4 py-2 rounded-lg transition-all duration-200 ease-out
+      active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-success {
+    @apply bg-foundry-green hover:bg-foundry-green-light text-foundry-bg font-medium
+      px-4 py-2 rounded-lg transition-all duration-200 ease-out
+      active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-foundry-surface border border-foundry-border rounded-xl p-6
+      transition-all duration-200 hover:border-foundry-border-light;
+  }
+
+  .card-interactive {
+    @apply card hover:border-foundry-purple/40 hover:shadow-lg
+      hover:shadow-foundry-purple/5 cursor-pointer;
+  }
+
+  .input-field {
+    @apply bg-foundry-bg border border-foundry-border rounded-lg px-4 py-2.5
+      text-foundry-text placeholder-foundry-text-dim
+      focus:outline-none focus:border-foundry-purple focus:ring-1 focus:ring-foundry-purple/30
+      transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-purple {
+    @apply badge bg-foundry-purple/15 text-foundry-purple border border-foundry-purple/25;
+  }
+
+  .badge-green {
+    @apply badge bg-foundry-green/15 text-foundry-green border border-foundry-green/25;
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(153, 69, 255, 0.15),
+      0 0 60px rgba(153, 69, 255, 0.05);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px rgba(20, 241, 149, 0.15),
+      0 0 60px rgba(20, 241, 149, 0.05);
+  }
+
+  .gradient-text-purple {
+    @apply bg-gradient-to-r from-foundry-purple to-foundry-purple-light
+      bg-clip-text text-transparent;
+  }
+
+  .gradient-text-green {
+    @apply bg-gradient-to-r from-foundry-green to-foundry-green-light
+      bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
