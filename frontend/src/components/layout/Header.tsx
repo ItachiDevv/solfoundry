@@ -123,7 +123,7 @@ export function Header({ onMenuClick, theme, onToggleTheme }: HeaderProps) {
                        bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-medium
                        text-gray-500 dark:text-gray-400"
           >
-            {"\u2318K"}
+            {"⌘K"}
           </kbd>
         </div>
       </div>
