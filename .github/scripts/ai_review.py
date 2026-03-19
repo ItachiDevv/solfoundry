@@ -232,7 +232,109 @@ def spam_check(diff: str, pr_body: str, pr_title: str) -> dict:
         if max_repeats > 20:
             return {"pass": False, "reason": f"Heavy copy-paste detected ({max_repeats} repeated lines)"}
 
+    # 8. Consecutive rejected PR detection — check if author has recent rejections
+    pr_author = os.environ.get("PR_AUTHOR", "")
+    if pr_author:
+        rejection_count = _count_recent_rejections(pr_author)
+        if rejection_count >= 3:
+            return {"pass": False, "reason": f"Author has {rejection_count} consecutive rejected PRs in last 48h"}
+
+    # 9. Diff fingerprinting — detect resubmission of identical diffs
+    if _is_duplicate_diff(diff):
+        return {"pass": False, "reason": "Diff matches a previously rejected submission (duplicate)"}
+
+    # 10. Call backend advanced spam API if available
+    backend_result = _call_backend_spam_api(diff, pr_body, pr_title)
+    if backend_result and backend_result.get("auto_action") == "auto-reject":
+        return {"pass": False, "reason": f"Backend spam detector: {_summarize_backend_result(backend_result)}"}
+
     return {"pass": True, "reason": "Passed all spam checks"}
+
+
+def _count_recent_rejections(author: str) -> int:
+    """Check the state file for recent rejections by this author."""
+    try:
+        import pathlib
+        state_file = pathlib.Path.home() / ".solfoundry" / "data" / "state.json"
+        if not state_file.exists():
+            return 0
+        state = json.loads(state_file.read_text())
+        count = 0
+        for pr_num, pr_data in state.get("pending_prs", {}).items():
+            if pr_data.get("author") == author and pr_data.get("verdict") in ("REJECT", "REQUEST_CHANGES"):
+                reviewed_at = pr_data.get("reviewed_at", "")
+                if reviewed_at:
+                    from datetime import timezone, timedelta
+                    review_dt = datetime.fromisoformat(reviewed_at)
+                    if review_dt > datetime.now(timezone.utc) - timedelta(hours=48):
+                        count += 1
+        return count
+    except Exception:
+        return 0
+
+
+def _is_duplicate_diff(diff: str) -> bool:
+    """Check if this diff's fingerprint was already seen and rejected."""
+    try:
+        import hashlib, pathlib
+        lines = diff.strip().split("\n")
+        shape_parts = []
+        for line in lines:
+            if line.startswith("+++") or line.startswith("---"):
+                continue
+            prefix = line[0] if line else " "
+            length_bucket = len(line) // 20
+            shape_parts.append(f"{prefix}{length_bucket}")
+        fp = hashlib.sha256("|".join(shape_parts).encode()).hexdigest()[:16]
+
+        state_file = pathlib.Path.home() / ".solfoundry" / "data" / "state.json"
+        if not state_file.exists():
+            return False
+        state = json.loads(state_file.read_text())
+        known_fps = state.get("rejected_fingerprints", [])
+        return fp in known_fps
+    except Exception:
+        return False
+
+
+def _call_backend_spam_api(diff: str, pr_body: str, pr_title: str) -> dict:
+    """Call the SolFoundry backend spam API for advanced checks.
+    Returns the response dict or None if the backend is unavailable."""
+    backend_url = os.environ.get("SOLFOUNDRY_BACKEND_URL", "")
+    if not backend_url:
+        return None
+
+    pr_number = int(os.environ.get("PR_NUMBER", "0"))
+    pr_author = os.environ.get("PR_AUTHOR", "unknown")
+    bounty_tier = os.environ.get("BOUNTY_TIER", "unknown")
+
+    try:
+        resp = requests.post(
+            f"{backend_url}/api/spam/check",
+            json={
+                "pr_number": pr_number,
+                "pr_author": pr_author,
+                "pr_title": pr_title,
+                "pr_body": pr_body,
+                "diff": diff[:50000],
+                "tier": bounty_tier,
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"Backend spam API unavailable: {e}")
+    return None
+
+
+def _summarize_backend_result(result: dict) -> str:
+    """Summarize failed checks from the backend spam API response."""
+    failed = [d for d in result.get("details", []) if not d.get("passed")]
+    if not failed:
+        return f"penalty {result.get('total_penalty', 0)}"
+    reasons = [d.get("reason", d.get("check_name", "unknown")) for d in failed[:3]]
+    return "; ".join(reasons)
 
 
 # ── LLM Reviewers ───────────────────────────────────────────────────────────
