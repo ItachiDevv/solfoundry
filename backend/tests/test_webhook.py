@@ -9,10 +9,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.event_processor import _event_log_store
 
 client = TestClient(app)
 
 SECRET = "test-webhook-secret"
+
+
+@pytest.fixture(autouse=True)
+def _clear_event_log():
+    _event_log_store.clear()
+    yield
+    _event_log_store.clear()
 
 
 def _make_signed_body(payload: dict, secret: str = SECRET) -> tuple[bytes, str]:

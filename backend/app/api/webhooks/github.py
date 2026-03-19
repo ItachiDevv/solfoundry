@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET", "")
-
-
 @router.post("/github")
 async def receive_github_webhook(
     request: Request,
@@ -34,9 +31,10 @@ async def receive_github_webhook(
     """Receive and process GitHub webhook events."""
     payload = await request.body()
 
-    if WEBHOOK_SECRET:
+    webhook_secret = os.getenv("GITHUB_WEBHOOK_SECRET", "")
+    if webhook_secret:
         try:
-            verify_signature(payload, x_hub_signature_256 or "", WEBHOOK_SECRET)
+            verify_signature(payload, x_hub_signature_256 or "", webhook_secret)
         except WebhookVerificationError as exc:
             logger.warning("Webhook verification failed: %s", exc)
             return JSONResponse(status_code=401, content={"error": str(exc)})
