@@ -315,41 +315,109 @@
         /* Mobile Menu */
         .mobile-menu {
             display: none;
+            min-width: 44px;
+            min-height: 44px;
+            padding: 8px;
         }
 
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+        }
+
+        /* Touch target enforcement */
+        a.cta-button, .btn-secondary, .final-cta .cta-button {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Responsive: 768px and below */
         @media (max-width: 768px) {
             .nav-links {
                 position: fixed;
-                top: 100%;
-                left: 0;
-                width: 100%;
+                top: 0;
+                right: 0;
+                width: 280px;
+                height: 100vh;
                 background: white;
                 flex-direction: column;
-                padding: 2rem;
-                transform: translateX(-100%);
+                padding: 5rem 2rem 2rem;
+                transform: translateX(100%);
                 transition: transform 0.3s ease;
+                box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+                z-index: 999;
+                gap: 0;
             }
 
             .nav-links.active {
                 transform: translateX(0);
             }
 
+            .nav-links li { width: 100%; }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                font-size: 1.1rem;
+            }
+
+            .nav-links a:hover {
+                background: rgba(99, 102, 241, 0.1);
+            }
+
             .mobile-menu {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 background: none;
                 border: none;
                 font-size: 1.5rem;
                 cursor: pointer;
             }
 
+            nav .cta-button { display: none; }
+
             .hero-buttons {
                 flex-direction: column;
                 align-items: center;
             }
 
-            .steps {
-                grid-template-columns: 1fr;
+            .hero-buttons .cta-button,
+            .hero-buttons .btn-secondary {
+                min-height: 44px;
+                width: 100%;
+                max-width: 280px;
             }
+
+            .steps { grid-template-columns: 1fr; }
+            .token-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .stat-number { font-size: 2rem; }
+            .section-title { font-size: 1.75rem; }
+            .cta-content h2 { font-size: 1.75rem; }
+            .hero p { font-size: 1rem; padding: 0 1rem; }
+            .container { padding: 0 16px; }
+        }
+
+        /* Responsive: 375px and below */
+        @media (max-width: 375px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 1.75rem; }
+            .hero p { font-size: 0.9rem; }
+            .section-title { font-size: 1.5rem; }
+            .stat-number { font-size: 1.75rem; }
         }
 
         /* Animations */
@@ -562,11 +630,30 @@
     </section>
 
     <script>
-        // Mobile menu toggle
+        // Mobile menu toggle with overlay
         function toggleMenu() {
-            const navLinks = document.querySelector('.nav-links');
-            navLinks.classList.toggle('active');
+            var navLinks = document.querySelector('.nav-links');
+            var overlay = document.querySelector('.mobile-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'mobile-overlay';
+                overlay.addEventListener('click', toggleMenu);
+                document.body.appendChild(overlay);
+            }
+            var isOpen = navLinks.classList.toggle('active');
+            overlay.classList.toggle('active', isOpen);
+            document.body.style.overflow = isOpen ? 'hidden' : '';
         }
+
+        // Close mobile menu on link click
+        document.querySelectorAll('.nav-links a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                var navLinks = document.querySelector('.nav-links');
+                if (navLinks.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+        });
 
         // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
