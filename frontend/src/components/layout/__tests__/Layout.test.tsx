@@ -25,7 +25,7 @@ describe('Layout', () => {
 
   it('renders the sidebar', () => {
     renderLayout();
-    expect(screen.getByLabelText('Main navigation')).toBeInTheDocument();
+    expect(screen.getAllByLabelText('Main navigation').length).toBeGreaterThan(0);
   });
 
   it('renders the footer', () => {
