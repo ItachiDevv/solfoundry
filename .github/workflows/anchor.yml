@@ -1,0 +1,80 @@
+# Anchor Pipeline — Solana contract build + test on devnet
+# Runs on PRs that touch the contracts/ directory and on pushes to main.
+
+name: Anchor
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "contracts/**"
+      - "Anchor.toml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "Anchor.toml"
+
+concurrency:
+  group: anchor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  anchor-build-test:
+    name: "Anchor Build & Test (devnet)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Solana CLI ──
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Solana version
+        run: solana --version
+
+      # ── Anchor CLI ──
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          avm install latest
+          avm use latest
+
+      - name: Verify Anchor version
+        run: anchor --version
+
+      # ── Rust toolchain ──
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts
+
+      # ── Node (for Anchor tests written in TS) ──
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install JS test deps
+        run: npm install
+        if: hashFiles('package.json') != ''
+
+      # ── Configure Solana for devnet ──
+      - name: Configure Solana CLI for devnet
+        run: |
+          solana config set --url https://api.devnet.solana.com
+          solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json
+          solana airdrop 2 || echo "Airdrop failed — tests may still pass with local validator"
+
+      # ── Build ──
+      - name: Anchor build
+        run: anchor build
+
+      # ── Test ──
+      - name: Anchor test
+        run: anchor test --skip-local-validator
+        env:
+          ANCHOR_PROVIDER_URL: https://api.devnet.solana.com
+          ANCHOR_WALLET: ~/.config/solana/id.json
