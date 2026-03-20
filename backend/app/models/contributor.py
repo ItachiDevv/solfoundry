@@ -1,4 +1,9 @@
-"""Contributor database and Pydantic models."""
+"""Contributor database and Pydantic response models.
+
+SQLAlchemy ORM model for the ``contributors`` table and all Pydantic
+schemas used by the contributor API.  Uses ``app.database.Base`` so it
+is created automatically by ``init_db()``.
+"""
 
 import uuid
 from datetime import datetime, timezone
@@ -7,11 +12,8 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from sqlalchemy import Column, String, DateTime, JSON, Float, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase
 
-
-class Base(DeclarativeBase):
-    pass
+from app.database import Base
 
 
 class ContributorDB(Base):

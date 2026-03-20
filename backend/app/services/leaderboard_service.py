@@ -1,7 +1,12 @@
-"""Leaderboard service — cached ranked contributor data."""
+"""Leaderboard service -- cached ranked contributor data from PostgreSQL.
+
+Queries ``contributors`` table via async sessions with caching for <100ms.
+Falls back to in-memory store when DB is unavailable.
+"""
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -16,7 +21,12 @@ from app.models.leaderboard import (
     TopContributor,
     TopContributorMeta,
 )
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.services.contributor_service import _store
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # In-memory cache (replaces materialized view for the MVP)
@@ -186,4 +196,35 @@ def get_leaderboard(
         limit=limit,
         top3=top3,
         entries=all_entries[offset : offset + limit],
+    )
+
+
+async def get_leaderboard_async(
+    session: AsyncSession, period: TimePeriod = TimePeriod.all,
+    tier: Optional[TierFilter] = None, category: Optional[CategoryFilter] = None,
+    limit: int = 20, offset: int = 0,
+) -> LeaderboardResponse:
+    """Build leaderboard from PostgreSQL with caching."""
+    try:
+        candidates = list((await session.execute(select(ContributorDB))).scalars().all())
+    except Exception as error:
+        logger.warning("DB query failed, using in-memory: %s", error)
+        candidates = list(_store.values())
+    cutoff = _period_cutoff(period)
+    if cutoff:
+        candidates = [c for c in candidates if c.created_at and c.created_at >= cutoff]
+    candidates = [c for c in candidates if _matches_tier(c, tier)]
+    candidates = [c for c in candidates if _matches_category(c, category)]
+    candidates.sort(key=lambda c: (-c.total_earnings, -c.reputation_score, c.username))
+    ranked = [(r, c) for r, c in enumerate(candidates, start=1)]
+    top3 = [_to_top(r, c) for r, c in ranked[:3]]
+    entries = [_to_entry(r, c) for r, c in ranked]
+    full = LeaderboardResponse(
+        period=period.value, total=len(entries), offset=0,
+        limit=len(entries), top3=top3, entries=entries,
+    )
+    _cache[_cache_key(period, tier, category)] = (time.time(), full)
+    return LeaderboardResponse(
+        period=period.value, total=full.total, offset=offset, limit=limit,
+        top3=top3, entries=entries[offset : offset + limit],
     )
