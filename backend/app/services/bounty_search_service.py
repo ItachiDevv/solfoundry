@@ -302,7 +302,6 @@ def _match_text(query: str, *fields: str) -> float:
 
 
 def _sort_key(b: BountyDB, sort: str, query: str):
-    """Internal helper: sort key."""
     if sort == "reward_high":
         return (-b.reward_amount,)
     if sort == "reward_low":
@@ -498,11 +497,9 @@ class BountySearchService:
     """Unified search interface. Uses PostgreSQL when available, memory otherwise."""
 
     def __init__(self, session: Optional[AsyncSession] = None):
-        """Initialize instance."""
         self._session = session
 
     async def _has_db(self) -> bool:
-        """Internal helper: has db."""
         if self._session is None:
             return False
         try:
@@ -514,19 +511,16 @@ class BountySearchService:
             return False
 
     async def search(self, params: BountySearchParams) -> BountySearchResponse:
-        """Handle search."""
         if await self._has_db():
             return await search_bounties_db(self._session, params)
         return search_bounties_memory(params)
 
     async def autocomplete(self, q: str, limit: int = 8) -> AutocompleteResponse:
-        """Handle autocomplete."""
         if await self._has_db():
             return await autocomplete_db(self._session, q, limit)
         return autocomplete_memory(q, limit)
 
     async def hot_bounties(self, limit: int = 6) -> list[BountySearchResult]:
-        """Handle hot bounties."""
         if await self._has_db():
             return await get_hot_bounties_db(self._session, limit)
         return get_hot_bounties_memory(limit)
@@ -537,7 +531,6 @@ class BountySearchService:
         completed_bounty_ids: Optional[list[str]] = None,
         limit: int = 6,
     ) -> list[BountySearchResult]:
-        """Handle recommended."""
         if await self._has_db():
             return await get_recommended_bounties_db(
                 self._session, user_skills, completed_bounty_ids or [], limit

@@ -18,7 +18,6 @@ _store: dict[str, ContributorDB] = {}
 
 
 def _db_to_response(db: ContributorDB) -> ContributorResponse:
-    """Internal helper: db to response."""
     return ContributorResponse(
         id=str(db.id),
         username=db.username,
@@ -41,7 +40,6 @@ def _db_to_response(db: ContributorDB) -> ContributorResponse:
 
 
 def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
-    """Internal helper: db to list item."""
     return ContributorListItem(
         id=str(db.id),
         username=db.username,
@@ -59,7 +57,6 @@ def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
 
 
 def create_contributor(data: ContributorCreate) -> ContributorResponse:
-    """Create a new contributor."""
     db = ContributorDB(
         id=uuid.uuid4(),
         username=data.username,
@@ -82,7 +79,6 @@ def list_contributors(
     skip: int = 0,
     limit: int = 20,
 ) -> ContributorListResponse:
-    """List all contributors."""
     results = list(_store.values())
     if search:
         q = search.lower()
@@ -105,13 +101,11 @@ def list_contributors(
 
 
 def get_contributor(contributor_id: str) -> Optional[ContributorResponse]:
-    """Retrieve contributor."""
     db = _store.get(contributor_id)
     return _db_to_response(db) if db else None
 
 
 def get_contributor_by_username(username: str) -> Optional[ContributorResponse]:
-    """Retrieve contributor by username."""
     for db in _store.values():
         if db.username == username:
             return _db_to_response(db)
@@ -121,7 +115,6 @@ def get_contributor_by_username(username: str) -> Optional[ContributorResponse]:
 def update_contributor(
     contributor_id: str, data: ContributorUpdate
 ) -> Optional[ContributorResponse]:
-    """Update an existing contributor."""
     db = _store.get(contributor_id)
     if not db:
         return None
@@ -132,5 +125,4 @@ def update_contributor(
 
 
 def delete_contributor(contributor_id: str) -> bool:
-    """Delete a contributor."""
     return _store.pop(contributor_id, None) is not None

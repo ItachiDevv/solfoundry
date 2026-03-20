@@ -18,7 +18,6 @@ from app.database import Base
 
 
 class BountyTable(Base):
-    """Represents a bounty table."""
     __tablename__ = "bounties"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

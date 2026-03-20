@@ -30,7 +30,6 @@ _test_app.include_router(bounties_router)
 
 @_test_app.get("/health")
 async def health_check():
-    """Handle health check."""
     return {"status": "ok"}
 
 
@@ -86,9 +85,7 @@ def _status_path(start: BountyStatus, end: BountyStatus):
 
 
 class TestCreateBounty:
-    """Tests for create bounty."""
     def test_create_success(self):
-        """Test create success."""
         resp = client.post("/api/bounties", json=VALID_BOUNTY)
         assert resp.status_code == 201
         body = resp.json()
@@ -104,7 +101,6 @@ class TestCreateBounty:
         assert "updated_at" in body
 
     def test_create_with_all_fields(self):
-        """Test create with all fields."""
         payload = {
             **VALID_BOUNTY,
             "deadline": "2026-12-31T23:59:59Z",
@@ -119,7 +115,6 @@ class TestCreateBounty:
         assert "2026-12-31" in body["deadline"]
 
     def test_create_minimal(self):
-        """Test create minimal."""
         resp = client.post(
             "/api/bounties", json={"title": "Min bounty", "reward_amount": 1.0}
         )
@@ -131,39 +126,32 @@ class TestCreateBounty:
         assert body["required_skills"] == []
 
     def test_create_invalid_title_empty(self):
-        """Test create invalid title empty."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "title": ""})
         assert resp.status_code == 422
 
     def test_create_invalid_title_too_short(self):
-        """Test create invalid title too short."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "title": "ab"})
         assert resp.status_code == 422
 
     def test_create_title_at_max_length(self):
-        """Test create title at max length."""
         long_title = "A" * 200
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "title": long_title})
         assert resp.status_code == 201
         assert resp.json()["title"] == long_title
 
     def test_create_title_over_max_length(self):
-        """Test create title over max length."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "title": "A" * 201})
         assert resp.status_code == 422
 
     def test_create_invalid_reward_zero(self):
-        """Test create invalid reward zero."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "reward_amount": 0})
         assert resp.status_code == 422
 
     def test_create_invalid_reward_negative(self):
-        """Test create invalid reward negative."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "reward_amount": -10})
         assert resp.status_code == 422
 
     def test_create_reward_at_minimum(self):
-        """Test create reward at minimum."""
         resp = client.post(
             "/api/bounties", json={**VALID_BOUNTY, "reward_amount": 0.01}
         )
@@ -171,25 +159,21 @@ class TestCreateBounty:
         assert resp.json()["reward_amount"] == 0.01
 
     def test_create_reward_above_max(self):
-        """Test create reward above max."""
         resp = client.post(
             "/api/bounties", json={**VALID_BOUNTY, "reward_amount": 1_000_001}
         )
         assert resp.status_code == 422
 
     def test_create_invalid_tier(self):
-        """Test create invalid tier."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "tier": 99})
         assert resp.status_code == 422
 
     def test_create_tier_1(self):
-        """Test create tier 1."""
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "tier": 1})
         assert resp.status_code == 201
         assert resp.json()["tier"] == 1
 
     def test_skills_normalised(self):
-        """Test skills normalised."""
         resp = client.post(
             "/api/bounties",
             json={
@@ -204,7 +188,6 @@ class TestCreateBounty:
         assert "wasm" in skills
 
     def test_skills_empty_strings_filtered(self):
-        """Test skills empty strings filtered."""
         resp = client.post(
             "/api/bounties",
             json={**VALID_BOUNTY, "required_skills": ["", "  ", "rust"]},
@@ -213,7 +196,6 @@ class TestCreateBounty:
         assert resp.json()["required_skills"] == ["rust"]
 
     def test_skills_too_many(self):
-        """Test skills too many."""
         resp = client.post(
             "/api/bounties",
             json={**VALID_BOUNTY, "required_skills": [f"skill{i}" for i in range(25)]},
@@ -221,7 +203,6 @@ class TestCreateBounty:
         assert resp.status_code == 422
 
     def test_skills_invalid_format(self):
-        """Test skills invalid format."""
         resp = client.post(
             "/api/bounties",
             json={**VALID_BOUNTY, "required_skills": ["valid", "has spaces"]},
@@ -229,14 +210,12 @@ class TestCreateBounty:
         assert resp.status_code == 422
 
     def test_create_special_characters_in_title(self):
-        """Test create special characters in title."""
         title = "Fix bug: handle <script>alert(xss)</script> & quotes"
         resp = client.post("/api/bounties", json={**VALID_BOUNTY, "title": title})
         assert resp.status_code == 201
         assert resp.json()["title"] == title
 
     def test_create_invalid_github_url(self):
-        """Test create invalid github url."""
         resp = client.post(
             "/api/bounties",
             json={
@@ -247,7 +226,6 @@ class TestCreateBounty:
         assert resp.status_code == 422
 
     def test_create_returns_unique_ids(self):
-        """Test create returns unique ids."""
         ids = set()
         for _ in range(10):
             resp = client.post("/api/bounties", json=VALID_BOUNTY)
@@ -261,9 +239,7 @@ class TestCreateBounty:
 
 
 class TestListBounties:
-    """Tests for list bounties."""
     def test_list_empty(self):
-        """Test list empty."""
         resp = client.get("/api/bounties")
         assert resp.status_code == 200
         body = resp.json()
@@ -273,7 +249,6 @@ class TestListBounties:
         assert body["limit"] == 20
 
     def test_list_with_data(self):
-        """Test list with data."""
         _create_bounty(title="Bnt 1")
         _create_bounty(title="Bnt 2")
         body = client.get("/api/bounties").json()
@@ -281,7 +256,6 @@ class TestListBounties:
         assert len(body["items"]) == 2
 
     def test_list_item_shape(self):
-        """Test list item shape."""
         _create_bounty()
         item = client.get("/api/bounties").json()["items"][0]
         expected_keys = {
@@ -299,7 +273,6 @@ class TestListBounties:
         assert set(item.keys()) == expected_keys
 
     def test_filter_by_status(self):
-        """Test filter by status."""
         b = _create_bounty(title="Alpha")
         bounty_service.update_bounty(
             b["id"], BountyUpdate(status=BountyStatus.IN_PROGRESS)
@@ -310,7 +283,6 @@ class TestListBounties:
         assert client.get("/api/bounties?status=completed").json()["total"] == 0
 
     def test_filter_by_tier(self):
-        """Test filter by tier."""
         _create_bounty(tier=1)
         _create_bounty(tier=2)
         _create_bounty(tier=3)
@@ -319,7 +291,6 @@ class TestListBounties:
         assert client.get("/api/bounties?tier=3").json()["total"] == 1
 
     def test_filter_by_skills(self):
-        """Test filter by skills."""
         _create_bounty(title="Rust wasm project", required_skills=["rust", "wasm"])
         _create_bounty(title="Python project", required_skills=["python"])
         _create_bounty(title="Rust python mix", required_skills=["rust", "python"])
@@ -328,17 +299,14 @@ class TestListBounties:
         assert client.get("/api/bounties?skills=python").json()["total"] == 2
 
     def test_filter_skills_case_insensitive(self):
-        """Test filter skills case insensitive."""
         _create_bounty(required_skills=["rust"])
         assert client.get("/api/bounties?skills=RUST").json()["total"] == 1
 
     def test_filter_skills_nonexistent(self):
-        """Test filter skills nonexistent."""
         _create_bounty(required_skills=["rust"])
         assert client.get("/api/bounties?skills=java").json()["total"] == 0
 
     def test_pagination_basic(self):
-        """Test pagination basic."""
         for i in range(5):
             _create_bounty(title=f"Bounty {i}")
         body = client.get("/api/bounties?skip=0&limit=2").json()
@@ -346,7 +314,6 @@ class TestListBounties:
         assert len(body["items"]) == 2
 
     def test_pagination_skip_beyond_total(self):
-        """Test pagination skip beyond total."""
         _create_bounty()
         _create_bounty()
         body = client.get("/api/bounties?skip=100&limit=10").json()
@@ -354,7 +321,6 @@ class TestListBounties:
         assert body["items"] == []
 
     def test_pagination_limit_exceeds_remaining(self):
-        """Test pagination limit exceeds remaining."""
         for i in range(3):
             _create_bounty(title=f"Bounty item {i}")
         body = client.get("/api/bounties?skip=1&limit=100").json()
@@ -362,24 +328,20 @@ class TestListBounties:
         assert len(body["items"]) == 2
 
     def test_combined_filters(self):
-        """Test combined filters."""
         _create_bounty(title="Match", tier=1, required_skills=["rust"])
         _create_bounty(title="Wrong tier", tier=2, required_skills=["rust"])
         _create_bounty(title="Wrong skill", tier=1, required_skills=["python"])
         assert client.get("/api/bounties?tier=1&skills=rust").json()["total"] == 1
 
     def test_limit_max_100(self):
-        """Test limit max 100."""
         resp = client.get("/api/bounties?limit=101")
         assert resp.status_code == 422
 
     def test_skip_negative(self):
-        """Test skip negative."""
         resp = client.get("/api/bounties?skip=-1")
         assert resp.status_code == 422
 
     def test_limit_zero(self):
-        """Test limit zero."""
         resp = client.get("/api/bounties?limit=0")
         assert resp.status_code == 422
 
@@ -390,9 +352,7 @@ class TestListBounties:
 
 
 class TestGetBounty:
-    """Tests for get bounty."""
     def test_get_success(self):
-        """Test get success."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.get(f"/api/bounties/{bid}")
@@ -404,13 +364,11 @@ class TestGetBounty:
         assert "submission_count" in body
 
     def test_get_not_found(self):
-        """Test get not found."""
         resp = client.get("/api/bounties/nonexistent-id")
         assert resp.status_code == 404
         assert "not found" in resp.json()["detail"].lower()
 
     def test_get_includes_submissions(self):
-        """Test get includes submissions."""
         b = _create_bounty()
         bid = b["id"]
         bounty_service.submit_solution(
@@ -425,7 +383,6 @@ class TestGetBounty:
         assert body["submissions"][0]["submitted_by"] == "alice"
 
     def test_get_response_shape(self):
-        """Test get response shape."""
         b = _create_bounty()
         bid = b["id"]
         body = client.get(f"/api/bounties/{bid}").json()
@@ -454,9 +411,7 @@ class TestGetBounty:
 
 
 class TestUpdateBounty:
-    """Tests for update bounty."""
     def test_update_title(self):
-        """Test update title."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"title": "New title"})
@@ -464,7 +419,6 @@ class TestUpdateBounty:
         assert resp.json()["title"] == "New title"
 
     def test_update_description(self):
-        """Test update description."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"description": "Updated"})
@@ -472,7 +426,6 @@ class TestUpdateBounty:
         assert resp.json()["description"] == "Updated"
 
     def test_update_reward_amount(self):
-        """Test update reward amount."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"reward_amount": 999.99})
@@ -480,7 +433,6 @@ class TestUpdateBounty:
         assert resp.json()["reward_amount"] == 999.99
 
     def test_update_multiple_fields(self):
-        """Test update multiple fields."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(
@@ -498,26 +450,22 @@ class TestUpdateBounty:
         assert body["reward_amount"] == 123.0
 
     def test_update_not_found(self):
-        """Test update not found."""
         resp = client.patch("/api/bounties/nope", json={"title": "Anything"})
         assert resp.status_code == 404
 
     def test_update_invalid_title_too_short(self):
-        """Test update invalid title too short."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"title": "ab"})
         assert resp.status_code == 422
 
     def test_update_invalid_reward(self):
-        """Test update invalid reward."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"reward_amount": -5})
         assert resp.status_code == 422
 
     def test_update_preserves_unset_fields(self):
-        """Test update preserves unset fields."""
         b = _create_bounty()
         bid = b["id"]
         original_desc = b["description"]
@@ -526,7 +474,6 @@ class TestUpdateBounty:
         assert resp.json()["description"] == original_desc
 
     def test_update_skills_normalised(self):
-        """Test update skills normalised."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(
@@ -536,7 +483,6 @@ class TestUpdateBounty:
         assert set(resp.json()["required_skills"]) == {"python", "go"}
 
     def test_update_updates_timestamp(self):
-        """Test update updates timestamp."""
         b = _create_bounty()
         bid = b["id"]
         original_updated = b["updated_at"]
@@ -548,7 +494,6 @@ class TestUpdateBounty:
     # --- Status transitions ---
 
     def test_status_open_to_in_progress(self):
-        """Test status open to in progress."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -556,7 +501,6 @@ class TestUpdateBounty:
         assert resp.json()["status"] == "in_progress"
 
     def test_status_full_lifecycle(self):
-        """Test status full lifecycle."""
         b = _create_bounty()
         bid = b["id"]
         for status in ["in_progress", "completed", "paid"]:
@@ -565,7 +509,6 @@ class TestUpdateBounty:
             assert resp.json()["status"] == status
 
     def test_invalid_open_to_completed(self):
-        """Test invalid open to completed."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"status": "completed"})
@@ -573,14 +516,12 @@ class TestUpdateBounty:
         assert "Invalid status transition" in resp.json()["detail"]
 
     def test_invalid_open_to_paid(self):
-        """Test invalid open to paid."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"status": "paid"})
         assert resp.status_code == 400
 
     def test_paid_is_terminal(self):
-        """Test paid is terminal."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -591,7 +532,6 @@ class TestUpdateBounty:
             assert resp.status_code == 400
 
     def test_in_progress_back_to_open(self):
-        """Test in progress back to open."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -600,7 +540,6 @@ class TestUpdateBounty:
         assert resp.json()["status"] == "open"
 
     def test_completed_back_to_in_progress(self):
-        """Test completed back to in progress."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -610,7 +549,6 @@ class TestUpdateBounty:
         assert resp.json()["status"] == "in_progress"
 
     def test_invalid_status_value(self):
-        """Test invalid status value."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.patch(f"/api/bounties/{bid}", json={"status": "invalid"})
@@ -626,7 +564,6 @@ class TestStatusTransitions:
     """Exhaustively verify every invalid status transition is rejected."""
 
     def test_transition_map_integrity(self):
-        """Test transition map integrity."""
         assert VALID_STATUS_TRANSITIONS[BountyStatus.OPEN] == {BountyStatus.IN_PROGRESS}
         assert VALID_STATUS_TRANSITIONS[BountyStatus.PAID] == set()
         for s in BountyStatus:
@@ -664,9 +601,7 @@ class TestStatusTransitions:
 
 
 class TestDeleteBounty:
-    """Tests for delete bounty."""
     def test_delete_success(self):
-        """Test delete success."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.delete(f"/api/bounties/{bid}")
@@ -674,18 +609,15 @@ class TestDeleteBounty:
         assert client.get(f"/api/bounties/{bid}").status_code == 404
 
     def test_delete_not_found(self):
-        """Test delete not found."""
         assert client.delete("/api/bounties/nope").status_code == 404
 
     def test_delete_idempotent(self):
-        """Test delete idempotent."""
         b = _create_bounty()
         bid = b["id"]
         assert client.delete(f"/api/bounties/{bid}").status_code == 204
         assert client.delete(f"/api/bounties/{bid}").status_code == 404
 
     def test_delete_removes_from_list(self):
-        """Test delete removes from list."""
         b1 = _create_bounty(title="Stay bounty")
         b2 = _create_bounty(title="Remove bounty")
         bid2 = b2["id"]
@@ -695,7 +627,6 @@ class TestDeleteBounty:
         assert body["items"][0]["id"] == b1["id"]
 
     def test_delete_does_not_affect_other_bounties(self):
-        """Test delete does not affect other bounties."""
         b1 = _create_bounty(title="Keep this")
         b2 = _create_bounty(title="Delete this")
         bid1 = b1["id"]
@@ -712,9 +643,7 @@ class TestDeleteBounty:
 
 
 class TestSubmitSolution:
-    """Tests for submit solution."""
     def test_submit_success(self):
-        """Test submit success."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.post(
@@ -734,7 +663,6 @@ class TestSubmitSolution:
         assert "submitted_at" in body
 
     def test_submit_with_notes(self):
-        """Test submit with notes."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.post(
@@ -749,7 +677,6 @@ class TestSubmitSolution:
         assert resp.json()["notes"] == "Fixed edge case in token transfer"
 
     def test_submit_bounty_not_found(self):
-        """Test submit bounty not found."""
         resp = client.post(
             "/api/bounties/nonexistent/submit",
             json={
@@ -760,7 +687,6 @@ class TestSubmitSolution:
         assert resp.status_code == 404
 
     def test_submit_invalid_pr_url(self):
-        """Test submit invalid pr url."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.post(
@@ -770,7 +696,6 @@ class TestSubmitSolution:
         assert resp.status_code == 422
 
     def test_submit_empty_pr_url(self):
-        """Test submit empty pr url."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.post(
@@ -780,7 +705,6 @@ class TestSubmitSolution:
         assert resp.status_code == 422
 
     def test_submit_empty_submitted_by(self):
-        """Test submit empty submitted by."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.post(
@@ -790,7 +714,6 @@ class TestSubmitSolution:
         assert resp.status_code == 422
 
     def test_submit_duplicate_rejected(self):
-        """Test submit duplicate rejected."""
         b = _create_bounty()
         bid = b["id"]
         url = "https://github.com/org/repo/pull/42"
@@ -804,7 +727,6 @@ class TestSubmitSolution:
         assert "already been submitted" in resp.json()["detail"]
 
     def test_submit_on_completed_bounty_rejected(self):
-        """Test submit on completed bounty rejected."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -820,7 +742,6 @@ class TestSubmitSolution:
         assert "not accepting" in resp.json()["detail"]
 
     def test_submit_on_paid_bounty_rejected(self):
-        """Test submit on paid bounty rejected."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -836,7 +757,6 @@ class TestSubmitSolution:
         assert resp.status_code == 400
 
     def test_submit_on_in_progress_accepted(self):
-        """Test submit on in progress accepted."""
         b = _create_bounty()
         bid = b["id"]
         client.patch(f"/api/bounties/{bid}", json={"status": "in_progress"})
@@ -850,7 +770,6 @@ class TestSubmitSolution:
         assert resp.status_code == 201
 
     def test_multiple_submissions(self):
-        """Test multiple submissions."""
         b = _create_bounty()
         bid = b["id"]
         for i in range(3):
@@ -867,7 +786,6 @@ class TestSubmitSolution:
         assert len(body["submissions"]) == 3
 
     def test_same_pr_different_bounties_accepted(self):
-        """Test same pr different bounties accepted."""
         b1 = _create_bounty(title="First bounty")
         b2 = _create_bounty(title="Second bounty")
         bid1 = b1["id"]
@@ -891,9 +809,7 @@ class TestSubmitSolution:
 
 
 class TestGetSubmissions:
-    """Tests for get submissions."""
     def test_empty_submissions(self):
-        """Test empty submissions."""
         b = _create_bounty()
         bid = b["id"]
         resp = client.get(f"/api/bounties/{bid}/submissions")
@@ -901,7 +817,6 @@ class TestGetSubmissions:
         assert resp.json() == []
 
     def test_with_data(self):
-        """Test with data."""
         b = _create_bounty()
         bid = b["id"]
         bounty_service.submit_solution(
@@ -921,12 +836,10 @@ class TestGetSubmissions:
         assert len(resp.json()) == 2
 
     def test_not_found(self):
-        """Test not found."""
         resp = client.get("/api/bounties/nope/submissions")
         assert resp.status_code == 404
 
     def test_submission_response_shape(self):
-        """Test submission response shape."""
         b = _create_bounty()
         bid = b["id"]
         bounty_service.submit_solution(
@@ -955,7 +868,5 @@ class TestGetSubmissions:
 
 
 class TestHealth:
-    """Tests for health."""
     def test_health(self):
-        """Test health."""
         assert client.get("/health").json() == {"status": "ok"}
