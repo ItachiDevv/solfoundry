@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import type { Contributor, TimeRange, SortField } from '../types/leaderboard';
+import { apiFetch } from '../services/api';
 
 const REPO = 'SolFoundry/solfoundry';
 const GITHUB_API = 'https://api.github.com';
@@ -85,15 +86,12 @@ export function useLeaderboard() {
     let c = false;
     (async () => {
       try {
-        // Try backend API first
-        const r = await fetch(`/api/leaderboard?range=${timeRange}`);
-        if (!c && r.ok) {
-          const data = await r.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setContributors(data);
-            setLoading(false);
-            return;
-          }
+        // Try backend API first (with retry via apiFetch)
+        const data = await apiFetch<Contributor[]>(`/api/leaderboard?range=${timeRange}`);
+        if (!c && Array.isArray(data) && data.length > 0) {
+          setContributors(data);
+          setLoading(false);
+          return;
         }
       } catch {
         // Backend unavailable — fall through to GitHub

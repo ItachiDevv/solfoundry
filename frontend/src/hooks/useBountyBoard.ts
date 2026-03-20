@@ -1,10 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Bounty, BountyBoardFilters, BountySortBy, SearchResponse } from '../types/bounty';
 import { DEFAULT_FILTERS } from '../types/bounty';
-import { mockBounties } from '../data/mockBounties';
-
-const REPO = 'SolFoundry/solfoundry';
-const GITHUB_API = 'https://api.github.com';
+import { apiFetch } from '../services/api';
 
 const TIER_MAP: Record<number, 'T1' | 'T2' | 'T3'> = { 1: 'T1', 2: 'T2', 3: 'T3' };
 const STATUS_MAP: Record<string, 'open' | 'in-progress' | 'completed'> = {
@@ -93,9 +90,9 @@ function applyLocalFilters(all: Bounty[], f: BountyBoardFilters, sortBy: BountyS
 }
 
 export function useBountyBoard() {
-  const [allBounties, setAllBounties] = useState<Bounty[]>(mockBounties);
+  const [allBounties, setAllBounties] = useState<Bounty[]>([]);
   const [apiResults, setApiResults] = useState<{ items: Bounty[]; total: number } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<BountyBoardFilters>(DEFAULT_FILTERS);
   const [sortBy, setSortByRaw] = useState<BountySortBy>('newest');
   const [page, setPage] = useState(1);
@@ -120,9 +117,8 @@ export function useBountyBoard() {
       setLoading(true);
       try {
         const params = buildSearchParams(filters, sortBy, page, perPage);
-        const res = await fetch(`/api/bounties/search?${params}`, { signal: ctrl.signal });
-        if (!res.ok) throw new Error('search failed');
-        const data: SearchResponse = await res.json();
+        const data = await apiFetch<SearchResponse>(
+          `/api/bounties/search?${params}`, { signal: ctrl.signal });
         setApiResults({ items: data.items.map(mapApiBounty), total: data.total });
       } catch (e: any) {
         if (e.name === 'AbortError') return;
@@ -130,15 +126,10 @@ export function useBountyBoard() {
         setApiResults(null);
         // Fallback: fetch all bounties once from old list endpoint
         try {
-          const res = await fetch('/api/bounties?limit=100');
-          if (res.ok) {
-            const data = await res.json();
-            const items = (data.items || data);
-            if (Array.isArray(items) && items.length > 0) {
-              setAllBounties(items.map(mapApiBounty));
-            }
-          }
-        } catch { /* keep mock data */ }
+          const fallback = await apiFetch<{ items: Bounty[] } | Bounty[]>('/api/bounties?limit=100');
+          const items = Array.isArray(fallback) ? fallback : fallback.items || [];
+          if (items.length > 0) setAllBounties(items.map(mapApiBounty));
+        } catch { /* API unavailable */ }
       } finally {
         if (!ctrl.signal.aborted) setLoading(false);
       }
@@ -159,23 +150,15 @@ export function useBountyBoard() {
 
   // Fetch hot bounties once
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/bounties/hot?limit=6');
-        if (res.ok) setHotBounties((await res.json()).map(mapApiBounty));
-      } catch { /* ignore */ }
-    })();
+    apiFetch<Bounty[]>('/api/bounties/hot?limit=6')
+      .then(data => setHotBounties(data.map(mapApiBounty))).catch(() => {});
   }, []);
 
   // Fetch recommended bounties
   useEffect(() => {
     const skills = filters.skills.length > 0 ? filters.skills : ['react', 'typescript', 'rust'];
-    (async () => {
-      try {
-        const res = await fetch(`/api/bounties/recommended?skills=${skills.join(',')}&limit=6`);
-        if (res.ok) setRecommendedBounties((await res.json()).map(mapApiBounty));
-      } catch { /* ignore */ }
-    })();
+    apiFetch<Bounty[]>(`/api/bounties/recommended?skills=${skills.join(',')}&limit=6`)
+      .then(data => setRecommendedBounties(data.map(mapApiBounty))).catch(() => {});
   }, [filters.skills]);
 
   const setFilter = useCallback(<K extends keyof BountyBoardFilters>(k: K, v: BountyBoardFilters[K]) => {
