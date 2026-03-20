@@ -1,0 +1,9 @@
+export function RequirementsChecklist({ requirements }: { requirements: { text: string; completed: boolean }[] }) {
+  return (
+    <div data-testid="requirements">
+      <h2 className="text-lg font-semibold text-white mb-3">Requirements</h2>
+      <ul className="space-y-2">{requirements.map((r, i) => (
+        <li key={i} className="flex items-center gap-2 text-sm"><span className={r.completed ? 'text-solana-green' : 'text-gray-500'}>{r.completed ? '[x]' : '[ ]'}</span><span className={r.completed ? 'text-gray-400 line-through' : 'text-white'}>{r.text}</span></li>
+      ))}</ul>
+    </div>);
+}
