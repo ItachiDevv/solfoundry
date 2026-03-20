@@ -1,4 +1,8 @@
-"""In-memory contributor service for MVP."""
+"""Contributor service with in-memory cache and PostgreSQL persistence.
+
+SQLAlchemy Column defaults are applied explicitly for in-memory use.
+Persistence to PostgreSQL is handled by persistence_service on writes.
+"""
 
 import uuid
 from datetime import datetime, timezone
@@ -29,17 +33,18 @@ def _db_to_response(db: ContributorDB) -> ContributorResponse:
         badges=db.badges or [],
         social_links=db.social_links or {},
         stats=ContributorStats(
-            total_contributions=db.total_contributions,
-            total_bounties_completed=db.total_bounties_completed,
-            total_earnings=db.total_earnings,
-            reputation_score=db.reputation_score,
+            total_contributions=db.total_contributions or 0,
+            total_bounties_completed=db.total_bounties_completed or 0,
+            total_earnings=db.total_earnings or 0.0,
+            reputation_score=db.reputation_score or 0,
         ),
-        created_at=db.created_at,
-        updated_at=db.updated_at,
+        created_at=db.created_at or datetime.now(timezone.utc),
+        updated_at=db.updated_at or datetime.now(timezone.utc),
     )
 
 
 def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
+    """Convert a ContributorDB record to the compact list item schema."""
     return ContributorListItem(
         id=str(db.id),
         username=db.username,
@@ -48,15 +53,17 @@ def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
         skills=db.skills or [],
         badges=db.badges or [],
         stats=ContributorStats(
-            total_contributions=db.total_contributions,
-            total_bounties_completed=db.total_bounties_completed,
-            total_earnings=db.total_earnings,
-            reputation_score=db.reputation_score,
+            total_contributions=db.total_contributions or 0,
+            total_bounties_completed=db.total_bounties_completed or 0,
+            total_earnings=db.total_earnings or 0.0,
+            reputation_score=db.reputation_score or 0,
         ),
     )
 
 
 def create_contributor(data: ContributorCreate) -> ContributorResponse:
+    """Create a new contributor with explicit defaults for stat fields."""
+    now = datetime.now(timezone.utc)
     db = ContributorDB(
         id=uuid.uuid4(),
         username=data.username,
@@ -67,6 +74,12 @@ def create_contributor(data: ContributorCreate) -> ContributorResponse:
         skills=data.skills,
         badges=data.badges,
         social_links=data.social_links,
+        total_contributions=0,
+        total_bounties_completed=0,
+        total_earnings=0.0,
+        reputation_score=0,
+        created_at=now,
+        updated_at=now,
     )
     _store[str(db.id)] = db
     return _db_to_response(db)

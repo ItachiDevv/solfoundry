@@ -36,11 +36,15 @@ async def create_contributor(data: ContributorCreate):
         raise HTTPException(
             status_code=409, detail=f"Username '{data.username}' already exists"
         )
-    return contributor_service.create_contributor(data)
+    result = contributor_service.create_contributor(data)
+    from app.services.persistence_service import persist_contributor
+    await persist_contributor(result.id)
+    return result
 
 
 @router.get("/{contributor_id}", response_model=ContributorResponse)
 async def get_contributor(contributor_id: str):
+    """Retrieve a single contributor profile by ID."""
     c = contributor_service.get_contributor(contributor_id)
     if not c:
         raise HTTPException(status_code=404, detail="Contributor not found")
@@ -49,13 +53,19 @@ async def get_contributor(contributor_id: str):
 
 @router.patch("/{contributor_id}", response_model=ContributorResponse)
 async def update_contributor(contributor_id: str, data: ContributorUpdate):
+    """Update a contributor and persist changes to database."""
     c = contributor_service.update_contributor(contributor_id, data)
     if not c:
         raise HTTPException(status_code=404, detail="Contributor not found")
+    from app.services.persistence_service import persist_contributor
+    await persist_contributor(contributor_id)
     return c
 
 
 @router.delete("/{contributor_id}", status_code=204)
 async def delete_contributor(contributor_id: str):
+    """Delete a contributor from store and database."""
     if not contributor_service.delete_contributor(contributor_id):
         raise HTTPException(status_code=404, detail="Contributor not found")
+    from app.services.persistence_service import delete_contributor_from_database
+    await delete_contributor_from_database(contributor_id)
