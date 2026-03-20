@@ -320,27 +320,14 @@
             padding: 8px;
         }
 
-        .mobile-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-        }
-
-        .mobile-overlay.active {
-            display: block;
-        }
-
-        /* Touch target enforcement */
-        a.cta-button, .btn-secondary, .final-cta .cta-button {
+        /* Touch-target enforcement for interactive elements */
+        a.cta-button, .btn-secondary {
             min-height: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Responsive: 768px and below */
         @media (max-width: 768px) {
             .nav-links {
                 position: fixed;
@@ -373,10 +360,6 @@
                 font-size: 1.1rem;
             }
 
-            .nav-links a:hover {
-                background: rgba(99, 102, 241, 0.1);
-            }
-
             .mobile-menu {
                 display: flex;
                 align-items: center;
@@ -396,7 +379,6 @@
 
             .hero-buttons .cta-button,
             .hero-buttons .btn-secondary {
-                min-height: 44px;
                 width: 100%;
                 max-width: 280px;
             }
@@ -406,12 +388,10 @@
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
             .stat-number { font-size: 2rem; }
             .section-title { font-size: 1.75rem; }
-            .cta-content h2 { font-size: 1.75rem; }
             .hero p { font-size: 1rem; padding: 0 1rem; }
             .container { padding: 0 16px; }
         }
 
-        /* Responsive: 375px and below */
         @media (max-width: 375px) {
             .stats-grid { grid-template-columns: 1fr; }
             .hero h1 { font-size: 1.75rem; }
@@ -630,22 +610,14 @@
     </section>
 
     <script>
-        // Mobile menu toggle with overlay
+        // Mobile menu toggle with scroll lock
         function toggleMenu() {
             var navLinks = document.querySelector('.nav-links');
-            var overlay = document.querySelector('.mobile-overlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.className = 'mobile-overlay';
-                overlay.addEventListener('click', toggleMenu);
-                document.body.appendChild(overlay);
-            }
             var isOpen = navLinks.classList.toggle('active');
-            overlay.classList.toggle('active', isOpen);
             document.body.style.overflow = isOpen ? 'hidden' : '';
         }
 
-        // Close mobile menu on link click
+        // Close mobile menu on nav link click
         document.querySelectorAll('.nav-links a').forEach(function(link) {
             link.addEventListener('click', function() {
                 var navLinks = document.querySelector('.nav-links');

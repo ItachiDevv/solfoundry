@@ -38,15 +38,6 @@ export default {
       fontFamily: {
         mono: ['"SF Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
       },
-      spacing: {
-        'touch': '44px',
-      },
-      minWidth: {
-        'touch': '44px',
-      },
-      minHeight: {
-        'touch': '44px',
-      },
     },
   },
   plugins: [],
