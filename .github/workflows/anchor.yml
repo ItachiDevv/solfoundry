@@ -1,5 +1,10 @@
-# Anchor Pipeline — Solana contract build + test on devnet
-# Runs on PRs that touch the contracts/ directory and on pushes to main.
+# Anchor Pipeline -- Solana contract build + test
+#
+# Runs only when files in contracts/ or Anchor.toml are modified.
+# Installs Solana CLI, Anchor CLI, and runs build + test against devnet.
+#
+# NOTE: This workflow will naturally be skipped on PRs that do not touch
+# contract code, thanks to the paths filter.
 
 name: Anchor
 
@@ -21,12 +26,12 @@ concurrency:
 
 jobs:
   anchor-build-test:
-    name: "Anchor Build & Test (devnet)"
+    name: "Anchor Build & Test"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # ── Solana CLI ──
+      # -- Solana CLI --
       - name: Install Solana CLI
         run: |
           sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
@@ -35,7 +40,7 @@ jobs:
       - name: Verify Solana version
         run: solana --version
 
-      # ── Anchor CLI ──
+      # -- Anchor CLI via AVM (Anchor Version Manager) --
       - name: Install Anchor CLI
         run: |
           cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
@@ -45,34 +50,34 @@ jobs:
       - name: Verify Anchor version
         run: anchor --version
 
-      # ── Rust toolchain ──
+      # -- Rust toolchain --
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: contracts
 
-      # ── Node (for Anchor tests written in TS) ──
+      # -- Node (for Anchor tests written in TypeScript) --
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install JS test deps
+      - name: Install JS test dependencies
         run: npm install
         if: hashFiles('package.json') != ''
 
-      # ── Configure Solana for devnet ──
-      - name: Configure Solana CLI for devnet
+      # -- Configure Solana for devnet --
+      - name: Configure Solana CLI
         run: |
           solana config set --url https://api.devnet.solana.com
           solana-keygen new --no-bip39-passphrase -o ~/.config/solana/id.json
-          solana airdrop 2 || echo "Airdrop failed — tests may still pass with local validator"
+          solana airdrop 2 || echo "::warning::Devnet airdrop failed"
 
-      # ── Build ──
+      # -- Build all Anchor programs --
       - name: Anchor build
         run: anchor build
 
-      # ── Test ──
+      # -- Run Anchor test suite --
       - name: Anchor test
         run: anchor test --skip-local-validator
         env:
