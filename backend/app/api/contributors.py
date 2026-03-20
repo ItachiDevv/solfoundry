@@ -23,6 +23,7 @@ async def list_contributors(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ):
+    """List all contributors."""
     skill_list = skills.split(",") if skills else None
     badge_list = badges.split(",") if badges else None
     return contributor_service.list_contributors(
@@ -32,6 +33,7 @@ async def list_contributors(
 
 @router.post("", response_model=ContributorResponse, status_code=201)
 async def create_contributor(data: ContributorCreate):
+    """Create a new contributor."""
     if contributor_service.get_contributor_by_username(data.username):
         raise HTTPException(
             status_code=409, detail=f"Username '{data.username}' already exists"
@@ -41,6 +43,7 @@ async def create_contributor(data: ContributorCreate):
 
 @router.get("/{contributor_id}", response_model=ContributorResponse)
 async def get_contributor(contributor_id: str):
+    """Retrieve contributor."""
     c = contributor_service.get_contributor(contributor_id)
     if not c:
         raise HTTPException(status_code=404, detail="Contributor not found")
@@ -49,6 +52,7 @@ async def get_contributor(contributor_id: str):
 
 @router.patch("/{contributor_id}", response_model=ContributorResponse)
 async def update_contributor(contributor_id: str, data: ContributorUpdate):
+    """Update an existing contributor."""
     c = contributor_service.update_contributor(contributor_id, data)
     if not c:
         raise HTTPException(status_code=404, detail="Contributor not found")
@@ -57,5 +61,6 @@ async def update_contributor(contributor_id: str, data: ContributorUpdate):
 
 @router.delete("/{contributor_id}", status_code=204)
 async def delete_contributor(contributor_id: str):
+    """Delete a contributor."""
     if not contributor_service.delete_contributor(contributor_id):
         raise HTTPException(status_code=404, detail="Contributor not found")

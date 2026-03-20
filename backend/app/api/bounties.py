@@ -37,6 +37,7 @@ router = APIRouter(prefix="/api/bounties", tags=["bounties"])
     summary="Create a new bounty",
 )
 async def create_bounty(data: BountyCreate) -> BountyResponse:
+    """Create a new bounty."""
     return bounty_service.create_bounty(data)
 
 
@@ -54,6 +55,7 @@ async def list_bounties(
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(20, ge=1, le=100, description="Page size"),
 ) -> BountyListResponse:
+    """List all bounties."""
     skill_list = (
         [s.strip().lower() for s in skills.split(",") if s.strip()] if skills else None
     )
@@ -70,6 +72,7 @@ async def list_bounties(
 async def _get_search_service(
     session: AsyncSession = Depends(get_db),
 ) -> BountySearchService:
+    """Internal helper: get search service."""
     return BountySearchService(session)
 
 
@@ -93,6 +96,7 @@ async def search_bounties(
     per_page: int = Query(20, ge=1, le=100),
     svc: BountySearchService = Depends(_get_search_service),
 ) -> BountySearchResponse:
+    """Search bounties."""
     skill_list = (
         [s.strip().lower() for s in skills.split(",") if s.strip()]
         if skills
@@ -124,6 +128,7 @@ async def autocomplete(
     limit: int = Query(8, ge=1, le=20),
     svc: BountySearchService = Depends(_get_search_service),
 ) -> AutocompleteResponse:
+    """Handle autocomplete."""
     return await svc.autocomplete(q, limit)
 
 
@@ -136,6 +141,7 @@ async def hot_bounties(
     limit: int = Query(6, ge=1, le=20),
     svc: BountySearchService = Depends(_get_search_service),
 ) -> list[BountySearchResult]:
+    """Handle hot bounties."""
     return await svc.hot_bounties(limit)
 
 
@@ -150,6 +156,7 @@ async def recommended_bounties(
     limit: int = Query(6, ge=1, le=20),
     svc: BountySearchService = Depends(_get_search_service),
 ) -> list[BountySearchResult]:
+    """Handle recommended bounties."""
     skill_list = [s.strip().lower() for s in skills.split(",") if s.strip()]
     excluded = (
         [e.strip() for e in exclude.split(",") if e.strip()] if exclude else []
@@ -168,6 +175,7 @@ async def recommended_bounties(
     summary="Get a single bounty by ID",
 )
 async def get_bounty(bounty_id: str) -> BountyResponse:
+    """Retrieve bounty."""
     result = bounty_service.get_bounty(bounty_id)
     if not result:
         raise HTTPException(status_code=404, detail="Bounty not found")
@@ -180,6 +188,7 @@ async def get_bounty(bounty_id: str) -> BountyResponse:
     summary="Partially update a bounty",
 )
 async def update_bounty(bounty_id: str, data: BountyUpdate) -> BountyResponse:
+    """Update an existing bounty."""
     result, error = bounty_service.update_bounty(bounty_id, data)
     if error:
         status_code = 404 if "not found" in error.lower() else 400
@@ -193,6 +202,7 @@ async def update_bounty(bounty_id: str, data: BountyUpdate) -> BountyResponse:
     summary="Delete a bounty",
 )
 async def delete_bounty(bounty_id: str) -> None:
+    """Delete a bounty."""
     if not bounty_service.delete_bounty(bounty_id):
         raise HTTPException(status_code=404, detail="Bounty not found")
 
@@ -204,6 +214,7 @@ async def delete_bounty(bounty_id: str) -> None:
     summary="Submit a PR solution for a bounty",
 )
 async def submit_solution(bounty_id: str, data: SubmissionCreate) -> SubmissionResponse:
+    """Handle submit solution."""
     result, error = bounty_service.submit_solution(bounty_id, data)
     if error:
         status_code = 404 if "not found" in error.lower() else 400
@@ -217,6 +228,7 @@ async def submit_solution(bounty_id: str, data: SubmissionCreate) -> SubmissionR
     summary="List submissions for a bounty",
 )
 async def get_submissions(bounty_id: str) -> list[SubmissionResponse]:
+    """Retrieve submissions."""
     result = bounty_service.get_submissions(bounty_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Bounty not found")

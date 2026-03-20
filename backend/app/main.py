@@ -108,6 +108,7 @@ app.include_router(websocket_router)
 
 @app.get("/health")
 async def health_check():
+    """Handle health check."""
     from app.services.github_sync import get_last_sync
     from app.services.bounty_service import _bounty_store
     from app.services.contributor_service import _store

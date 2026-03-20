@@ -31,6 +31,7 @@ def _cache_key(
     tier: Optional[TierFilter],
     category: Optional[CategoryFilter],
 ) -> str:
+    """Internal helper: cache key."""
     return f"{period.value}:{tier or 'all'}:{category or 'all'}"
 
 
@@ -47,6 +48,7 @@ MEDALS = {1: "🥇", 2: "🥈", 3: "🥉"}
 
 
 def _period_cutoff(period: TimePeriod) -> Optional[datetime]:
+    """Internal helper: period cutoff."""
     now = datetime.now(timezone.utc)
     if period == TimePeriod.week:
         return now - timedelta(days=7)
@@ -99,6 +101,7 @@ def _build_leaderboard(
 
 
 def _to_entry(rank: int, c: ContributorDB) -> LeaderboardEntry:
+    """Internal helper: to entry."""
     return LeaderboardEntry(
         rank=rank,
         username=c.username,
@@ -111,6 +114,7 @@ def _to_entry(rank: int, c: ContributorDB) -> LeaderboardEntry:
 
 
 def _to_top(rank: int, c: ContributorDB) -> TopContributor:
+    """Internal helper: to top."""
     return TopContributor(
         rank=rank,
         username=c.username,

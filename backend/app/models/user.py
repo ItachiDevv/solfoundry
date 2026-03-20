@@ -12,6 +12,7 @@ from app.database import Base
 
 
 class User(Base):
+    """Represents a user."""
     __tablename__ = "users"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -45,6 +46,7 @@ class UserDB(BaseModel):
 
 
 class UserResponse(BaseModel):
+    """Represents a user response."""
     id: str
     github_id: str
     username: str
@@ -56,6 +58,7 @@ class UserResponse(BaseModel):
     updated_at: datetime
 
     class Config:
+        """Represents a config."""
         from_attributes = True
 
 
