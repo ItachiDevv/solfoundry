@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { BountyDetail } from '../types/bountyDetail';
 import { mockBountyDetail } from '../data/mockBountyDetail';
+/** Hook: loads bounty by ID. Uses mock data; replace with API fetch in production. */
 export function useBountyDetail(bountyId: string) {
   const [bounty, setBounty] = useState<BountyDetail | null>(null);
   const [loading, setLoading] = useState(true);
