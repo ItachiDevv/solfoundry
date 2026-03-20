@@ -1,5 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type AnchorHTMLAttributes, type ReactNode } from 'react';
 
+/** Base props shared by all TouchTarget variants. */
 interface TouchTargetBaseProps {
   children: ReactNode;
   className?: string;
@@ -15,10 +16,16 @@ type TouchDivProps = TouchTargetBaseProps & {
   as: 'div'; onClick?: () => void; role?: string; tabIndex?: number;
 };
 
+/** Discriminated union of supported element types for TouchTarget. */
 export type TouchTargetProps = TouchButtonProps | TouchAnchorProps | TouchDivProps;
 
 const baseClasses = 'relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] touch-manipulation';
 
+/**
+ * Polymorphic touch-friendly element enforcing WCAG 2.5.8 minimum
+ * 44x44 px tap targets. Renders as button by default; set as=a or as=div
+ * to change. Includes touch-manipulation for fast mobile taps.
+ */
 export const TouchTarget = forwardRef<
   HTMLButtonElement | HTMLAnchorElement | HTMLDivElement,
   TouchTargetProps

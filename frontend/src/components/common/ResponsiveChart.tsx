@@ -1,6 +1,7 @@
 import { type ReactNode, useRef, useState, useEffect } from 'react';
 import { useIsMobile } from '../../utils/responsive';
 
+/** Props for ResponsiveChart. */
 interface ResponsiveChartProps {
   children: ReactNode;
   mobileContent?: ReactNode;
@@ -11,6 +12,12 @@ interface ResponsiveChartProps {
   className?: string;
 }
 
+/**
+ * Responsive chart wrapper: renders directly on desktop, horizontally
+ * scrollable on mobile. Provides an optional mobileContent slot for
+ * simplified mobile visualisations. Scroll-hint re-appears when scrolled
+ * back to the start.
+ */
 export function ResponsiveChart({
   children, mobileContent, minWidth = 500, title, subtitle, headerRight, className = '',
 }: ResponsiveChartProps) {
@@ -21,7 +28,10 @@ export function ResponsiveChart({
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !isMobile || mobileContent) return;
-    const handleScroll = () => { if (el.scrollLeft > 10) setShowScrollHint(false); };
+    const handleScroll = () => {
+      // Re-enable the hint when the user scrolls back to the start
+      setShowScrollHint(el.scrollLeft <= 10);
+    };
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
   }, [isMobile, mobileContent]);

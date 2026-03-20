@@ -62,6 +62,10 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
+/**
+ * Collapsible sidebar navigation with icon-only collapsed state and tooltips.
+ * Transitions between 64px (collapsed) and 256px (expanded) widths.
+ */
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 

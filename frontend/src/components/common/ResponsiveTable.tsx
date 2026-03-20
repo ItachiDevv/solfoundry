@@ -1,16 +1,25 @@
 import { type ReactNode } from 'react';
 import { useIsMobile } from '../../utils/responsive';
 
+/**
+ * Column definition for ResponsiveTable.
+ * @template T - Row data type.
+ */
 export interface Column<T> {
   key: string;
   header: string;
   render: (row: T) => ReactNode;
   primary?: boolean;
+  /**
+   * When true, this column is hidden in mobile card layout.
+   * It still appears in the desktop table view.
+   */
   hideOnMobile?: boolean;
   align?: 'left' | 'center' | 'right';
   minWidth?: string;
 }
 
+/** Props for ResponsiveTable. */
 interface ResponsiveTableProps<T> {
   columns: Column<T>[];
   data: T[];
@@ -20,6 +29,11 @@ interface ResponsiveTableProps<T> {
   className?: string;
 }
 
+/**
+ * Data table that switches between HTML table on desktop and stacked
+ * cards on mobile (below md breakpoint). Columns with primary: true
+ * appear prominently; hideOnMobile: true columns are omitted from cards.
+ */
 export function ResponsiveTable<T>({
   columns, data, keyExtractor, emptyMessage = 'No data available', cardAction, className = '',
 }: ResponsiveTableProps<T>) {

@@ -1,3 +1,7 @@
+/**
+ * @module common
+ * Re-exports shared responsive UI primitives: TouchTarget, ResponsiveTable, ResponsiveChart.
+ */
 export { TouchTarget } from './TouchTarget';
 export type { TouchTargetProps } from './TouchTarget';
 export { ResponsiveTable } from './ResponsiveTable';

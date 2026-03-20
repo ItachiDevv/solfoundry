@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TouchTarget } from '../common';
 
 // ============================================================================
 // Types
@@ -9,6 +10,7 @@ export interface NavLink {
   href: string;
 }
 
+/** Props for SiteLayout. */
 export interface SiteLayoutProps {
   children: React.ReactNode;
   currentPath?: string;
@@ -160,6 +162,7 @@ export function SiteLayout({
 // Header Component
 // ============================================================================
 
+/** Internal header bar with logo, navigation, wallet connect, and mobile hamburger. */
 interface HeaderProps {
   currentPath: string;
   walletAddress?: string | null;
@@ -278,23 +281,22 @@ function Header({
               )}
             </div>
           ) : (
-            <button
+            <TouchTarget
               onClick={onConnectWallet}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9945FF] to-[#14F195]
+              className="flex gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9945FF] to-[#14F195]
                        text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-[#9945FF]/20"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
               </svg>
               <span>Connect Wallet</span>
-            </button>
+            </TouchTarget>
           )}
 
-          {/* Mobile Menu Toggle */}
-          <button
+          {/* Mobile Menu Toggle -- TouchTarget ensures 44px WCAG tap target */}
+          <TouchTarget
             onClick={onToggleMobileMenu}
-            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg
-                     text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+            className="lg:hidden rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
           >
@@ -307,7 +309,7 @@ function Header({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             )}
-          </button>
+          </TouchTarget>
         </div>
       </div>
     </header>
@@ -325,6 +327,7 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+/** Mobile/tablet slide-out navigation panel. */
 function Sidebar({ isOpen, currentPath, onNavClick, onClose }: SidebarProps) {
   return (
     <aside
@@ -367,6 +370,7 @@ function Sidebar({ isOpen, currentPath, onNavClick, onClose }: SidebarProps) {
 // Footer Component
 // ============================================================================
 
+/** Site-wide footer with external links and Solana branding. */
 function Footer() {
   const currentYear = new Date().getFullYear();
 

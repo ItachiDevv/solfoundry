@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
+import { useIsMobile } from '../utils/responsive';
+import { TouchTarget } from './common';
 
+/** Props for ContributorProfile. */
 interface ContributorProfileProps {
   username: string;
   avatarUrl?: string;
@@ -11,6 +14,11 @@ interface ContributorProfileProps {
   reputationScore?: number;
 }
 
+/**
+ * Contributor profile card with avatar, wallet, and stats.
+ * On mobile the stats grid collapses to single column and the CTA
+ * uses TouchTarget for WCAG-compliant tap targets.
+ */
 export const ContributorProfile: React.FC<ContributorProfileProps> = ({
   username,
   avatarUrl,
@@ -19,12 +27,14 @@ export const ContributorProfile: React.FC<ContributorProfileProps> = ({
   bountiesCompleted = 0,
   reputationScore = 0,
 }) => {
+  const isMobile = useIsMobile();
+
   const truncatedWallet = walletAddress 
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : 'Not connected';
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 text-white">
+    <div className="bg-gray-900 rounded-lg p-4 sm:p-6 text-white">
       {/* Profile Header */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center">
@@ -41,7 +51,7 @@ export const ContributorProfile: React.FC<ContributorProfileProps> = ({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className={"grid gap-3 sm:gap-4 mb-6 " + (isMobile ? "grid-cols-1" : "grid-cols-3")}>
         <div className="bg-gray-800 rounded-lg p-4">
           <p className="text-gray-400 text-sm">Total Earned</p>
           <p className="text-xl font-bold text-green-400">{totalEarned.toLocaleString()} FNDRY</p>
@@ -57,12 +67,12 @@ export const ContributorProfile: React.FC<ContributorProfileProps> = ({
       </div>
 
       {/* Hire as Agent Button (placeholder) */}
-      <button 
+      <TouchTarget
         className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
         disabled
       >
         Hire as Agent (Coming Soon)
-      </button>
+      </TouchTarget>
     </div>
   );
 };

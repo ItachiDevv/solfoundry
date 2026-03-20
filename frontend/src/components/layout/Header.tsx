@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { TouchTarget } from '../common';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
@@ -8,6 +9,10 @@ interface HeaderProps {
   onToggleTheme: () => void;
 }
 
+/**
+ * App header with mobile hamburger, search, theme toggle, and user avatar.
+ * Hamburger uses TouchTarget for WCAG 2.5.8 compliant 44px touch targets.
+ */
 export function Header({ onMenuClick, theme, onToggleTheme }: HeaderProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,11 +39,9 @@ export function Header({ onMenuClick, theme, onToggleTheme }: HeaderProps) {
       {/* Left: Mobile menu + Search */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Mobile hamburger */}
-        <button
-          type="button"
+        <TouchTarget
           onClick={onMenuClick}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg
-                     text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
+          className="rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
                      hover:bg-gray-100 dark:hover:bg-gray-800
                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
                      lg:hidden"
@@ -47,7 +50,7 @@ export function Header({ onMenuClick, theme, onToggleTheme }: HeaderProps) {
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
-        </button>
+        </TouchTarget>
 
         {/* Search bar */}
         <div
