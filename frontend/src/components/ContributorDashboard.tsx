@@ -1,6 +1,16 @@
+/**
+ * ContributorDashboard - User-specific dashboard showing active bounties,
+ * earnings, activity feed, notifications, and account settings.
+ *
+ * Fetches live data from backend API endpoints with graceful fallback
+ * to empty states when the API is unavailable.
+ *
+ * @module components/ContributorDashboard
+ */
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 
 // ============================================================================
 // Types
@@ -57,54 +67,7 @@ interface ContributorDashboardProps {
 }
 
 // ============================================================================
-// Mock Data
-// ============================================================================
-
-const MOCK_STATS: DashboardStats = {
-  totalEarned: 2450000,
-  activeBounties: 3,
-  pendingPayouts: 500000,
-  reputationRank: 42,
-  totalContributors: 256,
-};
-
-const MOCK_BOUNTIES: Bounty[] = [
-  { id: '1', title: 'GitHub <-> Platform Bi-directional Sync', reward: 450000, deadline: '2026-03-27', status: 'in_progress', progress: 60 },
-  { id: '2', title: 'Real-time WebSocket Server', reward: 400000, deadline: '2026-03-26', status: 'submitted', progress: 100 },
-  { id: '3', title: 'Bounty Claiming System', reward: 500000, deadline: '2026-03-28', status: 'claimed', progress: 20 },
-];
-
-const MOCK_ACTIVITIES: Activity[] = [
-  { id: '1', type: 'payout', title: 'Payout Received', description: 'Received 500,000 $FNDRY for CI/CD Pipeline', timestamp: '2026-03-20T10:00:00Z', amount: 500000 },
-  { id: '2', type: 'review_received', title: 'Review Completed', description: 'Your PR for Auth System received score 8/10', timestamp: '2026-03-20T08:30:00Z' },
-  { id: '3', type: 'pr_submitted', title: 'PR Submitted', description: 'Submitted PR for WebSocket Server', timestamp: '2026-03-19T15:00:00Z' },
-  { id: '4', type: 'bounty_claimed', title: 'Bounty Claimed', description: 'Claimed "GitHub <-> Platform Sync"', timestamp: '2026-03-19T12:00:00Z' },
-  { id: '5', type: 'bounty_completed', title: 'Bounty Completed', description: 'CI/CD Pipeline bounty merged', timestamp: '2026-03-19T10:00:00Z' },
-];
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: '1', type: 'success', title: 'PR Merged', message: 'Your PR #109 has been merged!', timestamp: '2026-03-20T10:00:00Z', read: false },
-  { id: '2', type: 'info', title: 'New Bounty', message: 'A new T1 bounty is available: Twitter Post', timestamp: '2026-03-20T03:00:00Z', read: false },
-  { id: '3', type: 'warning', title: 'Deadline Approaching', message: 'WebSocket Server bounty deadline in 2 days', timestamp: '2026-03-20T02:00:00Z', read: true },
-];
-
-const MOCK_EARNINGS: EarningsData[] = [
-  { date: '2026-03-01', amount: 0 },
-  { date: '2026-03-05', amount: 0 },
-  { date: '2026-03-10', amount: 100000 },
-  { date: '2026-03-12', amount: 150000 },
-  { date: '2026-03-15', amount: 500000 },
-  { date: '2026-03-18', amount: 800000 },
-  { date: '2026-03-20', amount: 950000 },
-];
-
-const MOCK_LINKED_ACCOUNTS = [
-  { type: 'github', username: 'HuiNeng6', connected: true },
-  { type: 'twitter', username: '', connected: false },
-];
-
-// ============================================================================
-// Data Fetcher (Simulates API calls)
+// API Data Fetcher
 // ============================================================================
 
 interface DashboardData {
@@ -116,23 +79,52 @@ interface DashboardData {
   linkedAccounts: { type: string; username: string; connected: boolean }[];
 }
 
+/** Empty defaults used while API data is loading. */
+const EMPTY_STATS: DashboardStats = {
+  totalEarned: 0, activeBounties: 0, pendingPayouts: 0, reputationRank: 0, totalContributors: 0,
+};
+
+/**
+ * Fetch dashboard data from real API endpoints.
+ *
+ * Makes parallel requests to bounties, notifications, and contributors
+ * endpoints. Each request fails independently so partial data is
+ * still rendered.
+ *
+ * @param userId - Wallet address or user identifier.
+ * @returns Aggregated dashboard data bundle.
+ */
 async function fetchDashboardData(userId: string | undefined): Promise<DashboardData> {
-  // Simulate network delay (100-300ms)
-  await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
-  
-  // In a real app, this would fetch from an API using userId
-  // For now, return mock data but log userId for future integration
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('Fetching dashboard data for user:', userId || 'anonymous');
-  }
-  
+  const [bountiesResult, notificationsResult, contributorsResult] = await Promise.allSettled([
+    apiFetch<{ items: Bounty[] }>('/api/bounties?status=in_progress&limit=10'),
+    apiFetch<{ items: Notification[] }>('/api/notifications?limit=20'),
+    apiFetch<{ items: unknown[]; total: number }>('/api/contributors?limit=1'),
+  ]);
+
+  const bounties = bountiesResult.status === 'fulfilled'
+    ? (bountiesResult.value.items || []).map((b: any) => ({
+        id: b.id || '', title: b.title || '', reward: b.reward_amount || b.reward || 0,
+        deadline: b.deadline || '', status: b.status || 'claimed', progress: b.progress ?? 50,
+      }))
+    : [];
+
+  const notifications = notificationsResult.status === 'fulfilled'
+    ? (notificationsResult.value.items || []).map((n: any) => ({
+        id: n.id || '', type: n.type || 'info', title: n.title || '',
+        message: n.message || '', timestamp: n.timestamp || n.created_at || '', read: n.read ?? false,
+      }))
+    : [];
+
+  const totalContributors = contributorsResult.status === 'fulfilled'
+    ? contributorsResult.value.total : 0;
+
   return {
-    stats: MOCK_STATS,
-    bounties: MOCK_BOUNTIES,
-    activities: MOCK_ACTIVITIES,
-    notifications: MOCK_NOTIFICATIONS,
-    earnings: MOCK_EARNINGS,
-    linkedAccounts: MOCK_LINKED_ACCOUNTS,
+    stats: { ...EMPTY_STATS, activeBounties: bounties.length, totalContributors },
+    bounties,
+    activities: [],
+    notifications,
+    earnings: [],
+    linkedAccounts: [{ type: 'github', username: userId || '', connected: !!userId }],
   };
 }
 

@@ -7,6 +7,7 @@
  */
 import { useLeaderboard } from '../../hooks/useLeaderboard';
 import type { TimeRange, SortField } from '../../types/leaderboard';
+import { TableSkeleton } from '../LoadingSkeleton';
 
 const RANGES: { label: string; value: TimeRange }[] = [
   { label: '7 days', value: '7d' }, { label: '30 days', value: '30d' },
@@ -20,7 +21,14 @@ const SORTS: { label: string; value: SortField }[] = [
 export function LeaderboardPage() {
   const { contributors, loading, error, timeRange, setTimeRange, sortBy, setSortBy, search, setSearch } = useLeaderboard();
 
-  if (loading) return <div className="p-8 text-center text-gray-400" role="status">Loading leaderboard...</div>;
+  if (loading) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto space-y-6" role="status" aria-label="Loading leaderboard">
+        <div className="h-8 w-48 bg-gray-700 rounded animate-pulse" />
+        <TableSkeleton rows={5} />
+      </div>
+    );
+  }
   if (error) return <div className="p-8 text-center text-red-400" role="alert">Error: {error}</div>;
 
   return (
