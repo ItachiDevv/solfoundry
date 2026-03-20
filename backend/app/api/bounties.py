@@ -21,6 +21,7 @@ from app.models.bounty import (
     BountyStatus,
     BountyTier,
     BountyUpdate,
+    CreatorType,
     SubmissionCreate,
     SubmissionResponse,
 )
@@ -51,14 +52,42 @@ async def list_bounties(
     skills: Optional[str] = Query(
         None, description="Comma-separated skill filter (case-insensitive)"
     ),
+    creator_type: Optional[str] = Query(
+        None,
+        pattern=r"^(platform|community)$",
+        description="Filter by creator type: platform or community",
+    ),
+    reward_min: Optional[float] = Query(
+        None, ge=0, description="Minimum reward amount"
+    ),
+    reward_max: Optional[float] = Query(
+        None, ge=0, description="Maximum reward amount"
+    ),
+    sort: str = Query(
+        "newest",
+        description="Sort order: newest, reward_high, reward_low, deadline, submissions",
+    ),
     skip: int = Query(0, ge=0, description="Number of items to skip"),
     limit: int = Query(20, ge=1, le=100, description="Page size"),
 ) -> BountyListResponse:
+    """List bounties with filtering, sorting, and pagination.
+
+    Supports filtering by status, tier, skills, creator type, and reward range.
+    Sort by newest, highest/lowest reward, deadline soonest, or fewest submissions.
+    """
     skill_list = (
         [s.strip().lower() for s in skills.split(",") if s.strip()] if skills else None
     )
     return bounty_service.list_bounties(
-        status=status, tier=tier, skills=skill_list, skip=skip, limit=limit
+        status=status,
+        tier=tier,
+        skills=skill_list,
+        creator_type=creator_type,
+        reward_min=reward_min,
+        reward_max=reward_max,
+        sort=sort,
+        skip=skip,
+        limit=limit,
     )
 
 

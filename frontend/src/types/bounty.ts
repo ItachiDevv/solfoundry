@@ -16,6 +16,8 @@ export interface Bounty {
   createdAt: string;
   projectName: string;
   githubIssueUrl?: string;
+  creatorWallet?: string;
+  creatorType: 'platform' | 'community';
   relevanceScore?: number;
   skillMatchCount?: number;
 }
