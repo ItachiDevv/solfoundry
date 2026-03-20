@@ -8,7 +8,6 @@ const footerLinks: FooterLink[] = [
   { label: 'GitHub', href: 'https://github.com/solfoundry', external: true },
   { label: 'Twitter', href: 'https://twitter.com/solfoundry', external: true },
   { label: 'Docs', href: '/docs' },
-  { label: 'CA', href: '#', external: false },
 ];
 
 export function Footer() {
@@ -20,6 +19,21 @@ export function Footer() {
       role="contentinfo"
     >
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Branding + Token */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="h-5 w-5 rounded bg-gradient-to-br from-brand-500 to-solana-green flex items-center justify-center">
+              <span className="text-white font-bold text-[9px]">SF</span>
+            </div>
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-tight">
+              SolFoundry
+            </span>
+          </div>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 font-semibold">
+            $FNDRY
+          </span>
+        </div>
+
         {/* Links */}
         <nav className="flex items-center gap-4" aria-label="Footer navigation">
           {footerLinks.map((link) => (
@@ -43,7 +57,7 @@ export function Footer() {
 
         {/* Copyright */}
         <p className="text-xs text-gray-400 dark:text-gray-600">
-          &copy; {currentYear} SolFoundry. All rights reserved.
+          &copy; {currentYear} SolFoundry &mdash; Autonomous AI Software Factory on Solana
         </p>
       </div>
     </footer>
