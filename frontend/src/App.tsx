@@ -1,6 +1,9 @@
 /**
- * App — Root component with full routing and layout.
- * All pages wrapped in WalletProvider + SiteLayout.
+ * App - Root component with full routing, layout, and error boundary.
+ *
+ * All pages are wrapped in WalletProvider, ErrorBoundary, and SiteLayout.
+ * Page components are lazy-loaded for code splitting.
+ *
  * @module App
  */
 import { lazy, Suspense } from 'react';
@@ -8,6 +11,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletProvider } from './components/wallet/WalletProvider';
 import { SiteLayout } from './components/layout/SiteLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // ── Lazy-loaded page components ──────────────────────────────────────────────
 const BountiesPage = lazy(() => import('./pages/BountiesPage'));
@@ -46,8 +50,9 @@ function AppLayout() {
       onConnectWallet={() => connect().catch(console.error)}
       onDisconnectWallet={() => disconnect().catch(console.error)}
     >
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
           {/* Bounties */}
           <Route path="/" element={<Navigate to="/bounties" replace />} />
           <Route path="/bounties" element={<BountiesPage />} />
@@ -71,8 +76,9 @@ function AppLayout() {
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/bounties" replace />} />
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </SiteLayout>
   );
 }

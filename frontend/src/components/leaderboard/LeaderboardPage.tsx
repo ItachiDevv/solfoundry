@@ -6,9 +6,8 @@
  * @module components/leaderboard/LeaderboardPage
  */
 import { useLeaderboard } from '../../hooks/useLeaderboard';
-import { SkeletonTable } from '../common/Skeleton';
-import { NoDataAvailable } from '../common/EmptyState';
 import type { TimeRange, SortField } from '../../types/leaderboard';
+import { TableSkeleton } from '../LoadingSkeleton';
 
 const RANGES: { label: string; value: TimeRange }[] = [
   { label: '7 days', value: '7d' }, { label: '30 days', value: '30d' },
@@ -24,21 +23,12 @@ export function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto space-y-6" data-testid="leaderboard-page">
-        <div className="h-8 w-64 bg-surface-200 rounded-lg animate-pulse" />
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="h-10 w-64 bg-surface-200 rounded-lg animate-pulse" />
-          <div className="flex gap-1">
-            {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="h-8 w-16 bg-surface-200 rounded-lg animate-pulse" />
-            ))}
-          </div>
-        </div>
-        <SkeletonTable rows={10} columns={6} showAvatar />
+      <div className="p-6 max-w-5xl mx-auto space-y-6" role="status" aria-label="Loading leaderboard">
+        <div className="h-8 w-48 bg-gray-700 rounded animate-pulse" />
+        <TableSkeleton rows={5} />
       </div>
     );
   }
-  
   if (error) return <div className="p-8 text-center text-red-400" role="alert">Error: {error}</div>;
 
   return (
@@ -61,7 +51,7 @@ export function LeaderboardPage() {
         </select>
       </div>
       {contributors.length === 0 ? (
-        <NoDataAvailable dataType="contributors" />
+        <p className="text-center text-gray-400 py-12">No contributors found</p>
       ) : (
         <table className="w-full text-sm" role="table" aria-label="Leaderboard">
           <thead>
