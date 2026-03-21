@@ -1,4 +1,6 @@
-"""Tests for contributor profiles API."""
+"""Tests for contributor profiles API -- PostgreSQL migration."""
+
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,18 +12,20 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def clear_store():
+    """Reset the in-memory store before and after every test."""
     contributor_service._store.clear()
     yield
     contributor_service._store.clear()
 
 
-def _create(username="alice", display_name="Alice", skills=None, badges=None):
+def _create(username="alice", display_name=None, skills=None, badges=None):
+    """Helper — uses username.capitalize() as default display_name."""
     from app.models.contributor import ContributorCreate
 
     return contributor_service.create_contributor(
         ContributorCreate(
             username=username,
-            display_name=display_name,
+            display_name=display_name or username.capitalize(),
             skills=skills or ["python"],
             badges=badges or [],
         )
@@ -110,3 +114,38 @@ def test_update():
 def test_delete():
     c = _create("alice")
     assert client.delete(f"/api/contributors/{c.id}").status_code == 204
+
+
+# ---- Additional coverage for PostgreSQL migration --------------------------
+
+
+def test_search_case_insensitive():
+    _create("alice")
+    assert client.get("/api/contributors?search=ALICE").json()["total"] == 1
+
+
+def test_partial_update_preserves_fields():
+    c = _create("alice", skills=["python"], badges=["tier-1"])
+    client.patch(f"/api/contributors/{c.id}", json={"bio": "New bio"})
+    data = client.get(f"/api/contributors/{c.id}").json()
+    assert data["bio"] == "New bio" and data["skills"] == ["python"]
+
+
+def test_delete_removes_from_store():
+    c = _create("alice")
+    client.delete(f"/api/contributors/{c.id}")
+    assert client.get(f"/api/contributors/{c.id}").status_code == 404
+
+
+def test_delete_not_found():
+    assert client.delete("/api/contributors/nonexistent").status_code == 404
+
+
+def test_stats_default_to_zero():
+    c = _create("newuser")
+    assert c.stats.total_contributions == 0 and c.stats.total_earnings == 0.0
+
+
+def test_get_by_username_service():
+    _create("alice")
+    assert contributor_service.get_contributor_by_username("alice").username == "alice"

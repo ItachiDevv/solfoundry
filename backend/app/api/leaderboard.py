@@ -1,16 +1,22 @@
-"""Leaderboard API endpoints."""
+"""Leaderboard API endpoints.
+
+Reads from in-memory store as primary source; falls back to PostgreSQL
+when the store is empty.
+"""
 
 from typing import Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import get_db
 from app.models.leaderboard import (
     CategoryFilter,
     TierFilter,
     TimePeriod,
 )
-from app.services.leaderboard_service import get_leaderboard
+from app.services.leaderboard_service import get_leaderboard, get_leaderboard_async
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
@@ -38,6 +44,7 @@ async def leaderboard(
     category: Optional[CategoryFilter] = Query(None, description="Filter by category"),
     limit: int = Query(50, ge=1, le=100, description="Results per page"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
+    session: AsyncSession = Depends(get_db),
 ):
     """Ranked list of contributors by $FNDRY earned.
 
@@ -51,6 +58,7 @@ async def leaderboard(
     elif range:
         resolved_period = _RANGE_MAP.get(range, TimePeriod.all)
 
+    # Primary: read from in-memory store
     result = get_leaderboard(
         period=resolved_period,
         tier=tier,
@@ -58,6 +66,15 @@ async def leaderboard(
         limit=limit,
         offset=offset,
     )
+    # Fallback: if in-memory is empty, try PostgreSQL
+    if result.total == 0:
+        try:
+            result = await get_leaderboard_async(
+                session=session, period=resolved_period, tier=tier,
+                category=category, limit=limit, offset=offset,
+            )
+        except Exception:
+            pass
 
     # Return frontend-friendly format: array of Contributor objects
     contributors = []
