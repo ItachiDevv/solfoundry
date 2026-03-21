@@ -1,4 +1,4 @@
-"""Payout, treasury, and tokenomics API endpoints (in-memory MVP)."""
+"""Payout, treasury, and tokenomics API endpoints with PostgreSQL persistence."""
 
 from __future__ import annotations
 
@@ -92,12 +92,19 @@ async def get_payout_detail(tx_hash: str) -> PayoutResponse:
     },
 )
 async def record_payout(data: PayoutCreate) -> PayoutResponse:
-    """Record a new payout.  Invalidates the treasury cache on success."""
+    """Record a new payout and persist to database.
+
+    Invalidates the treasury cache on success. The payout is written
+    to both the in-memory store and the PostgreSQL database for
+    persistence across server restarts.
+    """
     try:
         result = create_payout(data)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     invalidate_cache()
+    from app.services.persistence_service import persist_payout
+    await persist_payout(result.id)
     return result
 
 
@@ -123,12 +130,18 @@ async def treasury_buybacks(
 
 @router.post("/treasury/buybacks", response_model=BuybackResponse, status_code=201)
 async def record_buyback(data: BuybackCreate) -> BuybackResponse:
-    """Record a new buyback event.  Invalidates the treasury cache on success."""
+    """Record a new buyback event and persist to database.
+
+    Invalidates the treasury cache on success. The buyback is written
+    to both the in-memory store and the PostgreSQL database.
+    """
     try:
         result = create_buyback(data)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     invalidate_cache()
+    from app.services.persistence_service import persist_buyback
+    await persist_buyback(result.id)
     return result
 
 

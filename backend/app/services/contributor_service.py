@@ -1,4 +1,8 @@
-"""In-memory contributor service for MVP."""
+"""Contributor service with in-memory cache and PostgreSQL persistence.
+
+SQLAlchemy Column defaults are applied explicitly for in-memory use.
+Persistence to PostgreSQL is handled by persistence_service on writes.
+"""
 
 import uuid
 from datetime import datetime, timezone
@@ -18,7 +22,6 @@ _store: dict[str, ContributorDB] = {}
 
 
 def _db_to_response(db: ContributorDB) -> ContributorResponse:
-    """Convert a ContributorDB row to an API response model."""
     return ContributorResponse(
         id=str(db.id),
         username=db.username,
@@ -30,18 +33,18 @@ def _db_to_response(db: ContributorDB) -> ContributorResponse:
         badges=db.badges or [],
         social_links=db.social_links or {},
         stats=ContributorStats(
-            total_contributions=db.total_contributions,
-            total_bounties_completed=db.total_bounties_completed,
-            total_earnings=db.total_earnings,
-            reputation_score=db.reputation_score,
+            total_contributions=db.total_contributions or 0,
+            total_bounties_completed=db.total_bounties_completed or 0,
+            total_earnings=db.total_earnings or 0.0,
+            reputation_score=db.reputation_score or 0,
         ),
-        created_at=db.created_at,
-        updated_at=db.updated_at,
+        created_at=db.created_at or datetime.now(timezone.utc),
+        updated_at=db.updated_at or datetime.now(timezone.utc),
     )
 
 
 def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
-    """Convert a ContributorDB row to a lightweight list item."""
+    """Convert a ContributorDB record to the compact list item schema."""
     return ContributorListItem(
         id=str(db.id),
         username=db.username,
@@ -50,16 +53,17 @@ def _db_to_list_item(db: ContributorDB) -> ContributorListItem:
         skills=db.skills or [],
         badges=db.badges or [],
         stats=ContributorStats(
-            total_contributions=db.total_contributions,
-            total_bounties_completed=db.total_bounties_completed,
-            total_earnings=db.total_earnings,
-            reputation_score=db.reputation_score,
+            total_contributions=db.total_contributions or 0,
+            total_bounties_completed=db.total_bounties_completed or 0,
+            total_earnings=db.total_earnings or 0.0,
+            reputation_score=db.reputation_score or 0,
         ),
     )
 
 
 def create_contributor(data: ContributorCreate) -> ContributorResponse:
-    """Create a new contributor and return its response."""
+    """Create a new contributor with explicit defaults for stat fields."""
+    now = datetime.now(timezone.utc)
     db = ContributorDB(
         id=uuid.uuid4(),
         username=data.username,
@@ -70,6 +74,12 @@ def create_contributor(data: ContributorCreate) -> ContributorResponse:
         skills=data.skills,
         badges=data.badges,
         social_links=data.social_links,
+        total_contributions=0,
+        total_bounties_completed=0,
+        total_earnings=0.0,
+        reputation_score=0,
+        created_at=now,
+        updated_at=now,
     )
     _store[str(db.id)] = db
     return _db_to_response(db)
@@ -82,7 +92,6 @@ def list_contributors(
     skip: int = 0,
     limit: int = 20,
 ) -> ContributorListResponse:
-    """List contributors with optional search, skill, and badge filters."""
     results = list(_store.values())
     if search:
         q = search.lower()
@@ -105,13 +114,11 @@ def list_contributors(
 
 
 def get_contributor(contributor_id: str) -> Optional[ContributorResponse]:
-    """Return a contributor response by ID or None if not found."""
     db = _store.get(contributor_id)
     return _db_to_response(db) if db else None
 
 
 def get_contributor_by_username(username: str) -> Optional[ContributorResponse]:
-    """Look up a contributor by username or return None."""
     for db in _store.values():
         if db.username == username:
             return _db_to_response(db)
@@ -121,7 +128,6 @@ def get_contributor_by_username(username: str) -> Optional[ContributorResponse]:
 def update_contributor(
     contributor_id: str, data: ContributorUpdate
 ) -> Optional[ContributorResponse]:
-    """Partially update a contributor, returning the updated response."""
     db = _store.get(contributor_id)
     if not db:
         return None
@@ -132,26 +138,4 @@ def update_contributor(
 
 
 def delete_contributor(contributor_id: str) -> bool:
-    """Delete a contributor by ID, returning True if found."""
     return _store.pop(contributor_id, None) is not None
-
-
-def get_contributor_db(contributor_id: str) -> Optional[ContributorDB]:
-    """Return the raw ContributorDB record or None."""
-    return _store.get(contributor_id)
-
-
-def update_reputation_score(contributor_id: str, score: float) -> None:
-    """Set the reputation_score on the contributor's DB record.
-
-    This is the public API that other services should use instead of
-    reaching into ``_store`` directly.
-    """
-    db = _store.get(contributor_id)
-    if db is not None:
-        db.reputation_score = score
-
-
-def list_contributor_ids() -> list[str]:
-    """Return all contributor IDs currently in the store."""
-    return list(_store.keys())

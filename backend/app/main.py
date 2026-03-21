@@ -1,4 +1,4 @@
-"""FastAPI application entry point."""
+"""FastAPI application entry point with PostgreSQL persistence."""
 
 import asyncio
 import logging
@@ -35,6 +35,17 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler for startup and shutdown."""
     await init_db()
     await ws_manager.init()
+
+    # Load persisted data from PostgreSQL into in-memory stores
+    from app.services.persistence_service import load_all_from_database
+    try:
+        db_counts = await load_all_from_database()
+        logger.info(
+            "Database load complete: %d bounties, %d contributors, %d payouts",
+            db_counts["bounties"], db_counts["contributors"], db_counts["payouts"],
+        )
+    except Exception as database_error:
+        logger.warning("Database load failed (non-fatal): %s", database_error)
 
     # Sync bounties + contributors from GitHub Issues (replaces static seeds)
     try:
